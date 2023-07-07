@@ -3,6 +3,8 @@ print("Sensors and Actuators")
 import time
 import serial.tools.list_ports
 import sys
+import requests
+import random
 from Adafruit_IO import MQTTClient
 
 AIO_USERNAME = "duyp"
@@ -22,8 +24,9 @@ def processData(data, client):
     data = data.replace("#", "")
     splitData = data.split(":")
     print(splitData)
-    client.publish("sensordata",splitData[2])
-
+    for i in range(3):
+      client.publish("sensordata",splitData[i])
+    
 def readSerial(client):
     bytesToRead = ser.inWaiting()
     if (bytesToRead > 0):
@@ -47,7 +50,7 @@ def connected(client):
     print("Server connected ...")
     client.subscribe("button1")
     client.subscribe("button2")
-    client.subscribe("sensordata")
+    client.subscribe("equation")
 
 def subscribe(client , userdata , mid , granted_qos):
     print("Subscribeb!!!")
@@ -72,7 +75,26 @@ def message(client , feed_id , payload):
         elif payload == "0":
             print("off")
             sendCommand("5")
+    if feed_id == "equation":
+      global global_equation
+      global_equation = payload
+      print(global_equation)
 
+def init_global_equation():
+    global global_equation
+    headers = {}
+    aio_url = "https://io.adafruit.com/api/v2/duyp/feeds/equation"
+    x = requests.get(url=aio_url, headers=headers, verify=False)
+    data = x.json()
+    global_equation = data["last_value"]
+    print("Get lastest value:", global_equation)
+
+def modify_value(x1, x2, x3):
+    global  global_equation
+    print("Equation: ", global_equation)
+    result = eval(global_equation)
+    print(result)
+    return result
 
 client = MQTTClient(AIO_USERNAME , AIO_KEY)
 
@@ -83,11 +105,21 @@ client.on_subscribe = subscribe
 
 client.connect()
 client.loop_background()
+init_global_equation()
 
 while True:
     requestData("0", client)
-    time.sleep(1)
     requestData("1", client)
+    time.sleep(3)
+    s1 = random.randint(4,110)
+    s2 = random.randint(2,1000)
+    s3 = random.randint(1,800)
+    client.publish("sensor1", s1)
+    client.publish("sensor2", s2)
+    client.publish("sensor3", s3)
+    s4 = modify_value(s1, s2, s3)
+    client.publish("sensor4", s4)
+    print(s4)
     time.sleep(1)
 
     pass
