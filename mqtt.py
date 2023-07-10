@@ -10,7 +10,7 @@ from Adafruit_IO import MQTTClient
 AIO_USERNAME = "duyp"
 AIO_KEY = ""
 
-global_equation = "x1 + x2 + x3"
+#global_equation = "x1 + x2 + x3"
 
 try:
     ser = serial.Serial(port="COM3", baudrate=115200)
